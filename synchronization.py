@@ -13,7 +13,7 @@ class Synchronization:
         self.__cloud: Cloud = cloud
 
 
-    def __get_all_files(self) -> Dict[str, str]:
+    def __get_all_files(self) -> Dict[str, float]:
         """
         Метод для получения всех файлов из папки на локальном диске
 
@@ -42,5 +42,8 @@ class Synchronization:
         return files
 
     def synchronize(self):
-        result = self.__get_all_files()
-        print(result)
+        local_files: Dict[str, float] = self.__get_all_files()
+        cloud_files: Dict[str, float] = self.__cloud.files_info()
+
+        print(local_files)
+        print(cloud_files)
