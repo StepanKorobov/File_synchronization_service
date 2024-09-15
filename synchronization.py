@@ -45,5 +45,15 @@ class Synchronization:
         local_files: Dict[str, float] = self.__get_all_files()
         cloud_files: Dict[str, float] = self.__cloud.files_info()
 
+        # Проверяем наличие файлов в облаке
+        for i_file, i_date in local_files.items():
+            file_path = os.path.abspath(os.path.join(self.__dir_path, i_file))
+            # Если файла нет в облаке, то загружаем его
+            if i_file not in cloud_files:
+                self.__cloud.file_upload(file_path=file_path)
+            # Если файл обновился, то обновляем его в облаке
+            elif i_date > cloud_files[i_file]:
+                self.__cloud.file_upload(file_path=file_path)
+
         print(local_files)
         print(cloud_files)

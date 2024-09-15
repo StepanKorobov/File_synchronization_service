@@ -89,7 +89,7 @@ class Cloud:
         request_put = requests.put(url=url, data=file)
 
     def file_reload(self, file_path: str) -> None:
-        pass
+        self.file_upload(file_path)
 
     def file_delete(self, file_name: str) -> None:
         pass
