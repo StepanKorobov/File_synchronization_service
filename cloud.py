@@ -37,7 +37,7 @@ class Cloud:
         files_list: List[Dict] = result["_embedded"]["items"]
         # словарь с файлами
         files_dict: Dict[str, float] = dict()
-        # локальная временная зона (у яндекс диска +0), нужно для корректной синхранизации файлов
+        # локальная временная зона (у яндекс диска +0), нужно для корректной синхронизации файлов
         time_utc = strftime("%z", gmtime())
         time_utc = int(time_utc[1:3])
 
@@ -88,8 +88,23 @@ class Cloud:
         # Загружаем файл в облако
         request_put = requests.put(url=url, data=file)
 
+
     def file_reload(self, file_path: str) -> None:
+        """Метод для обновления файлов"""
         self.file_upload(file_path)
 
+
     def file_delete(self, file_name: str) -> None:
-        pass
+        """
+        Метод для удаления файлов с облака
+
+        :param file_name: путь к локальному файлу
+        :type: str
+        """
+        # Путь к файлу в облаке
+        cloud_file_path: str = f"{self.__dir_name}/{file_name}"
+
+        request = requests.delete(
+            url="https://cloud-api.yandex.net/v1/disk/resources",
+            headers=self.__headers,
+            params={"path": cloud_file_path})

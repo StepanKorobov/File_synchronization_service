@@ -1,7 +1,6 @@
-import os
-import time
 from dotenv import dotenv_values
 from typing import Dict
+import time
 
 from cloud import Cloud
 from synchronization import Synchronization

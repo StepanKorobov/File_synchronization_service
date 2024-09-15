@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict
 import os
 
 from cloud import Cloud
@@ -42,11 +42,15 @@ class Synchronization:
         return files
 
     def synchronize(self):
+        """Метод для синхронизации файлов"""
+        # Получаем словарь локальных файлов
         local_files: Dict[str, float] = self.__get_all_files()
+        # Получаем словарь файлов из обака
         cloud_files: Dict[str, float] = self.__cloud.files_info()
 
         # Проверяем наличие файлов в облаке
         for i_file, i_date in local_files.items():
+            # Путь к локальному файлу
             file_path = os.path.abspath(os.path.join(self.__dir_path, i_file))
             # Если файла нет в облаке, то загружаем его
             if i_file not in cloud_files:
@@ -55,5 +59,8 @@ class Synchronization:
             elif i_date > cloud_files[i_file]:
                 self.__cloud.file_upload(file_path=file_path)
 
-        print(local_files)
-        print(cloud_files)
+        # Проверяем отсутствие файлов в локальной папке
+        for i_file in cloud_files.keys():
+            # Если файла с облака нет в локальной папке, то удаляем его
+            if i_file not in local_files:
+                self.__cloud.file_delete(file_name=i_file)
