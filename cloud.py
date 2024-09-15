@@ -1,5 +1,6 @@
+from datetime import datetime, timedelta
+from time import strftime, gmtime
 from typing import Dict, List
-import datetime
 import os
 
 import requests
@@ -36,26 +37,56 @@ class Cloud:
         files_list: List[Dict] = result["_embedded"]["items"]
         # словарь с файлами
         files_dict: Dict[str, float] = dict()
+        # локальная временная зона (у яндекс диска +0), нужно для корректной синхранизации файлов
+        time_utc = strftime("%z", gmtime())
+        time_utc = int(time_utc[1:3])
 
+        # В цикле проходимся по всем файлам для добавления в словарь
         for i_file in files_list:
             # Получаем время обновления файла строкой
             dt:str = i_file["modified"]
             # Получаем время обновления файла в корректном формате
-            dt: datetime.datetime = datetime.datetime(
+            date_time: datetime = datetime(
                 year=int(dt[0:4]),
                 month=int(dt[5:7]),
                 day=int(dt[8:10]),
                 hour=int(dt[11:13]),
                 minute=int(dt[14:16]),
-                second=int(dt[17:19]))
+                second=int(dt[17:19]),)
+            correct_dt = date_time + timedelta(hours=time_utc)
             # Сохраняем в словарь
-            files_dict[i_file["name"]]:float = dt.timestamp()
+            files_dict[i_file["name"]]:float = correct_dt.timestamp()
 
         return files_dict
 
 
     def file_upload(self, file_path: str) -> None:
-        pass
+        """
+        Метод для загрузки файлов на облако
+
+        :param file_path: путь к локальному файлу
+        :type file_path: str
+        """
+        # Путь к локальному файлу
+        path = os.path.abspath(file_path)
+        # Имя файла
+        file_name = os.path.basename(file_path)
+        # Путь к файлу в облаке
+        cloud_file_path = f"{self.__dir_name}/{file_name}"
+
+        # Считываем локальный файл
+        with open(path, "rb") as f:
+            file = f.read()
+
+        # Запрос на получение ссылки для загрузки файла в облако
+        request = requests.get(
+            url="https://cloud-api.yandex.net/v1/disk/resources/upload",
+            headers=self.__headers,
+            params={"path": cloud_file_path, "overwrite": "true"})
+        # Получаем url для загрузки файла
+        url = request.json()["href"]
+        # Загружаем файл в облако
+        request_put = requests.put(url=url, data=file)
 
     def file_reload(self, file_path: str) -> None:
         pass
