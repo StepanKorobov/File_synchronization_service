@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Set
 import os
 
 from cloud import Cloud
@@ -51,7 +51,7 @@ class Synchronization:
         # Проверяем наличие файлов в облаке и дату последнего изменения
         for i_file, i_date in local_files.items():
             # Путь к локальному файлу
-            file_path = os.path.abspath(os.path.join(self.__dir_path, i_file))
+            file_path: str = os.path.abspath(os.path.join(self.__dir_path, i_file))
             # Если файла нет в облаке, то загружаем его
             if i_file not in cloud_files:
                 self.__cloud.load(file_path=file_path)
@@ -60,7 +60,7 @@ class Synchronization:
                 self.__cloud.load(file_path=file_path)
 
         # Проверяем отсутствие файлов в локальной папке
-        delite_files = cloud_files.keys() - local_files.keys()
+        delite_files: Set = cloud_files.keys() - local_files.keys()
         # Удаляем все файлы, которых нет в локальной папке
         for i_file in delite_files:
             self.__cloud.delete(file_name=i_file)
