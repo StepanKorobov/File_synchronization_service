@@ -22,7 +22,7 @@ class Main:
         # Удаляем стандартный логгер
         logger.remove()
         # Добавляем свои
-        logger.add(sink="logging.log",
+        logger.add(sink=path_log_file,
                    format="synchronizer {time:YYYY-MM-DD HH:mm:ss,SSS} {level} {message}",
                    level="INFO",
                    rotation="1 MB",
