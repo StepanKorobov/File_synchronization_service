@@ -1,6 +1,11 @@
+import sys
+
 from dotenv import dotenv_values
 from typing import Dict
+import os
 import time
+
+from loguru import logger
 
 from cloud import Cloud
 from synchronization import Synchronization
@@ -10,19 +15,27 @@ class Main:
     @classmethod
     def __get_env(cls) -> Dict:
         """Метод для загрузки переменных окружения"""
-        config = dotenv_values(".env")
+        config: Dict = dotenv_values(".env")
 
         return config
 
     @classmethod
     def __logging_settings(cls, path_log_file: str):
-        pass
+        # Удаляем стандартный логгер
+        logger.remove()
+        # Добавляем свои
+        logger.add(sink="logging.log",
+                   format="synchronizer {time:YYYY-MM-DD HH:mm:ss,SSS} {level} {message}",
+                   level="INFO",
+                   rotation="1 MB",
+                   compression="zip",)
+        logger.add(sys.stdout, format="synchronizer {time:YYYY-MM-DD HH:mm:ss,SSS} {level} {message}")
 
     @classmethod
     def start(cls):
         """Метод для настройки приложения и запуска синхронизации файлов"""
         # Получаем переменные окружения
-        config = cls.__get_env()
+        config: Dict = cls.__get_env()
 
         # Путь до локальной папки с файлами
         path_sync_folder: str = config.get("PATH_SYNC_FOLDER")
@@ -35,17 +48,24 @@ class Main:
         # Путь к файлу с логами
         path_log_file: str = config.get("PATH_LOG_FILE")
 
-        # Создаём экземпляр класса для работы с облаком
-        cloud = Cloud(token=token, dir_name=path_cloud_folder)
-        # Создаём экземпляр класса для работы с синхронизацией
-        synchronization = Synchronization(dir_path=path_sync_folder, cloud=cloud)
+        # Создаём логгер
+        cls.__logging_settings(path_log_file=path_log_file)
+        # Проверяем существование указанной локальной директории
+        if os.path.exists(path_sync_folder):
+            # Создаём экземпляр класса для работы с облаком
+            cloud: Cloud = Cloud(token=token, dir_name=path_cloud_folder)
+            # Создаём экземпляр класса для работы с синхронизацией
+            synchronization: Synchronization = Synchronization(dir_path=path_sync_folder, cloud=cloud)
 
-        # запускаем бесконечный цикл
-        while True:
-            # Синхронизируем файлы
-            synchronization.synchronize()
-            # Засыпаем на установленный период
-            time.sleep(sync_period)
+            # запускаем бесконечный цикл
+            logger.info(f"Программа синхронизации файлов начинает работу с директорией {path_sync_folder}.")
+            while True:
+                # Синхронизируем файлы
+                synchronization.synchronize()
+                # Засыпаем на установленный период
+                time.sleep(sync_period)
+
+        logger.critical(f"Указанной директории не существует {path_sync_folder}. Программа прекращает свою работу")
 
 
 if __name__ == "__main__":
