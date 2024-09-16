@@ -1,5 +1,5 @@
-from typing import Dict, Set
 import os
+from typing import Dict, Set
 
 from cloud import Cloud
 
@@ -8,10 +8,10 @@ class Synchronization:
     """
     Класс для синхронизации файлов
     """
+
     def __init__(self, dir_path: str, cloud: Cloud):
         self.__dir_path: str = dir_path
         self.__cloud: Cloud = cloud
-
 
     def __get_all_files(self) -> Dict[str, float]:
         """
@@ -46,7 +46,7 @@ class Synchronization:
         # Получаем словарь локальных файлов
         local_files: Dict[str, float] = self.__get_all_files()
         # Получаем словарь файлов из облака
-        cloud_files: Dict[str, float] | None= self.__cloud.get_info()
+        cloud_files: Dict[str, float] | None = self.__cloud.get_info()
 
         # Если соединение спешно и список получен
         if cloud_files is not None:

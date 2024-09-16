@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta
-from time import strftime, gmtime, sleep
-from typing import Dict, List
 import os
+from datetime import datetime, timedelta
+from time import gmtime, sleep, strftime
+from typing import Dict, List
 
+import requests
 from loguru import logger
 from requests.exceptions import ConnectionError
-import requests
 
 
 class Cloud:
@@ -16,9 +16,12 @@ class Cloud:
     def __init__(self, token: str, dir_name: str):
         self.__headers: Dict[str, str] = {"Authorization": f"OAuth {token}"}
         self.__params: Dict[str, str] = {"path": dir_name, "limit": 999}
-        self.__params_load: Dict[str, str] = {"path": dir_name, "overwrite": "false", "limit": 999}
+        self.__params_load: Dict[str, str] = {
+            "path": dir_name,
+            "overwrite": "false",
+            "limit": 999,
+        }
         self.__dir_name: str = dir_name
-
 
     @classmethod
     def __get_file_dict(cls, files_list: List[Dict[str, str]]) -> Dict[str, float]:
@@ -48,7 +51,8 @@ class Cloud:
                 day=int(dt[8:10]),
                 hour=int(dt[11:13]),
                 minute=int(dt[14:16]),
-                second=int(dt[17:19]), )
+                second=int(dt[17:19]),
+            )
             correct_dt = date_time + timedelta(hours=time_utc)
             # Сохраняем в словарь
             files_dict[i_file["name"]]: float = correct_dt.timestamp()
@@ -69,7 +73,8 @@ class Cloud:
                 request = requests.get(
                     url="https://cloud-api.yandex.net/v1/disk/resources",
                     headers=self.__headers,
-                    params=self.__params)
+                    params=self.__params,
+                )
 
                 # Если статус 200, значит токен исправен
                 if request.status_code == 200:
@@ -81,8 +86,6 @@ class Cloud:
                 # Если отсутствует подключение к интернету, ждём 10 секунд
                 logger.error("Не удалось проверить токен. Ошибка соединения.")
                 sleep(10)
-
-
 
     def get_info(self) -> Dict[str, float] | None:
         """
@@ -101,7 +104,8 @@ class Cloud:
             request = requests.get(
                 url="https://cloud-api.yandex.net/v1/disk/resources",
                 headers=self.__headers,
-                params=params)
+                params=params,
+            )
             # Преобразуем в json
             result: Dict = request.json()
             # Получаем список файлов
@@ -142,7 +146,8 @@ class Cloud:
             request = requests.get(
                 url="https://cloud-api.yandex.net/v1/disk/resources/upload",
                 headers=self.__headers,
-                params=self.__params_load)
+                params=self.__params_load,
+            )
             # Получаем url для загрузки файла
             url: str = request.json()["href"]
 
@@ -171,7 +176,6 @@ class Cloud:
         self.load(file_path=file_path)
         self.__params_load["overwrite"] = "false"
 
-
     def delete(self, file_name: str) -> None:
         """
         Метод для удаления файлов с облака
@@ -186,7 +190,8 @@ class Cloud:
             requests.delete(
                 url="https://cloud-api.yandex.net/v1/disk/resources",
                 headers=self.__headers,
-                params={"path": cloud_file_path})
+                params={"path": cloud_file_path},
+            )
         except ConnectionError:
             logger.error(f"Файл {file_name} не удалён. Ошибка соединения.")
         else:
