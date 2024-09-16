@@ -60,9 +60,7 @@ class Synchronization:
                 self.__cloud.load(file_path=file_path)
 
         # Проверяем отсутствие файлов в локальной папке
-        print(cloud_files.keys() - local_files.keys())
-        for i_file in cloud_files.keys():
-            # Если файла с облака нет в локальной папке, то удаляем его
-            if i_file not in local_files:
-                print(i_file)
-                self.__cloud.delete(file_name=i_file)
+        delite_files = cloud_files.keys() - local_files.keys()
+        # Удаляем все файлы, которых нет в локальной папке
+        for i_file in delite_files:
+            self.__cloud.delete(file_name=i_file)
