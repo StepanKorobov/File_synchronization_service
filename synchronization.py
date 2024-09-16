@@ -46,21 +46,23 @@ class Synchronization:
         # Получаем словарь локальных файлов
         local_files: Dict[str, float] = self.__get_all_files()
         # Получаем словарь файлов из обака
-        cloud_files: Dict[str, float] = self.__cloud.files_info()
+        cloud_files: Dict[str, float] = self.__cloud.get_info()
 
-        # Проверяем наличие файлов в облаке
+        # Проверяем наличие файлов в облаке и дату последнего изменения
         for i_file, i_date in local_files.items():
             # Путь к локальному файлу
             file_path = os.path.abspath(os.path.join(self.__dir_path, i_file))
             # Если файла нет в облаке, то загружаем его
             if i_file not in cloud_files:
-                self.__cloud.file_upload(file_path=file_path)
+                self.__cloud.load(file_path=file_path)
             # Если файл обновился, то обновляем его в облаке
             elif i_date > cloud_files[i_file]:
-                self.__cloud.file_upload(file_path=file_path)
+                self.__cloud.load(file_path=file_path)
 
         # Проверяем отсутствие файлов в локальной папке
+        print(cloud_files.keys() - local_files.keys())
         for i_file in cloud_files.keys():
             # Если файла с облака нет в локальной папке, то удаляем его
             if i_file not in local_files:
-                self.__cloud.file_delete(file_name=i_file)
+                print(i_file)
+                self.__cloud.delete(file_name=i_file)
