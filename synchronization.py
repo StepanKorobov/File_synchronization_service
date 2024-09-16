@@ -59,7 +59,7 @@ class Synchronization:
                     self.__cloud.load(file_path=file_path)
                 # Если файл обновился, то обновляем его в облаке
                 elif i_date > cloud_files[i_file]:
-                    self.__cloud.load(file_path=file_path)
+                    self.__cloud.reload(file_path=file_path)
 
             # Проверяем отсутствие файлов в локальной папке
             delite_files: Set = cloud_files.keys() - local_files.keys()
