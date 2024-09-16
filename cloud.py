@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
-from imghdr import tests
+from importlib import reload
 from time import strftime, gmtime, sleep
 from typing import Dict, List
 import os
 
+from dotenv.cli import unset
 from loguru import logger
 from requests.exceptions import ConnectionError
 import requests
@@ -16,7 +17,8 @@ class Cloud:
 
     def __init__(self, token: str, dir_name: str):
         self.__headers: Dict[str, str] = {"Authorization": f"OAuth {token}"}
-        self.__params: Dict[str, str] = {"path": dir_name}
+        self.__params: Dict[str, str] = {"path": dir_name, "limit": 999}
+        self.__params_load: Dict[str, str] = {"path": dir_name, "overwrite": "false", "limit": 999}
         self.__dir_name: str = dir_name
 
 
@@ -121,6 +123,8 @@ class Cloud:
 
         :param file_path: путь к локальному файлу
         :type file_path: str
+        :param rewrite: перезаписывать файл или нет, нужно при обновлении файла
+        :type rewrite: bool
         """
         # Путь к локальному файлу
         path: str = os.path.abspath(file_path)
@@ -128,6 +132,8 @@ class Cloud:
         file_name: str = os.path.basename(file_path)
         # Путь к файлу в облаке
         cloud_file_path: str = f"{self.__dir_name}/{file_name}"
+        # параметры
+        self.__params_load["path"] = cloud_file_path
 
         # Считываем локальный файл
         with open(path, "rb") as f:
@@ -138,21 +144,35 @@ class Cloud:
             request = requests.get(
                 url="https://cloud-api.yandex.net/v1/disk/resources/upload",
                 headers=self.__headers,
-                params={"path": cloud_file_path, "overwrite": "true"})
-
+                params=self.__params_load)
             # Получаем url для загрузки файла
             url: str = request.json()["href"]
 
             # Загружаем файл в облако
             requests.put(url=url, data=file)
 
-            logger.info(f"Файл {file_name} успешно записан.")
         except ConnectionError:
-            logger.error(f"Файл {file_name} не записан. Ошибка соединения.")
+            if self.__params_load["overwrite"] == "false":
+                logger.error(f"Файл {file_name} не записан. Ошибка соединения.")
+            else:
+                logger.error(f"Файл {file_name} не перезаписан. Ошибка соединения.")
+        else:
+            if self.__params_load["overwrite"] == "false":
+                logger.info(f"Файл {file_name} успешно записан.")
+            else:
+                logger.info(f"Файл {file_name} успешно перезаписан.")
 
     def reload(self, file_path: str) -> None:
-        """Метод для обновления файлов"""
-        self.load(file_path)
+        """
+        Метод для обновления файлов
+
+        :param file_path: путь к локальному файлу
+        :type file_path: str
+        """
+        self.__params_load["overwrite"] = "true"
+        self.load(file_path=file_path)
+        self.__params_load["overwrite"] = "false"
+
 
     def delete(self, file_name: str) -> None:
         """
@@ -164,7 +184,12 @@ class Cloud:
         # Путь к файлу в облаке
         cloud_file_path: str = f"{self.__dir_name}/{file_name}"
 
-        request = requests.delete(
-            url="https://cloud-api.yandex.net/v1/disk/resources",
-            headers=self.__headers,
-            params={"path": cloud_file_path})
+        try:
+            requests.delete(
+                url="https://cloud-api.yandex.net/v1/disk/resources",
+                headers=self.__headers,
+                params={"path": cloud_file_path})
+        except ConnectionError:
+            logger.error(f"Файл {file_name} не удалён. Ошибка соединения.")
+        else:
+            logger.info(f"Файл {file_name} успешно удалён.")
