@@ -45,22 +45,24 @@ class Synchronization:
         """Метод для синхронизации файлов"""
         # Получаем словарь локальных файлов
         local_files: Dict[str, float] = self.__get_all_files()
-        # Получаем словарь файлов из обака
-        cloud_files: Dict[str, float] = self.__cloud.get_info()
+        # Получаем словарь файлов из облака
+        cloud_files: Dict[str, float] | None= self.__cloud.get_info()
 
-        # Проверяем наличие файлов в облаке и дату последнего изменения
-        for i_file, i_date in local_files.items():
-            # Путь к локальному файлу
-            file_path: str = os.path.abspath(os.path.join(self.__dir_path, i_file))
-            # Если файла нет в облаке, то загружаем его
-            if i_file not in cloud_files:
-                self.__cloud.load(file_path=file_path)
-            # Если файл обновился, то обновляем его в облаке
-            elif i_date > cloud_files[i_file]:
-                self.__cloud.load(file_path=file_path)
+        # Если соединение спешно и список получен
+        if cloud_files:
+            # Проверяем наличие файлов в облаке и дату последнего изменения
+            for i_file, i_date in local_files.items():
+                # Путь к локальному файлу
+                file_path: str = os.path.abspath(os.path.join(self.__dir_path, i_file))
+                # Если файла нет в облаке, то загружаем его
+                if i_file not in cloud_files:
+                    self.__cloud.load(file_path=file_path)
+                # Если файл обновился, то обновляем его в облаке
+                elif i_date > cloud_files[i_file]:
+                    self.__cloud.load(file_path=file_path)
 
-        # Проверяем отсутствие файлов в локальной папке
-        delite_files: Set = cloud_files.keys() - local_files.keys()
-        # Удаляем все файлы, которых нет в локальной папке
-        for i_file in delite_files:
-            self.__cloud.delete(file_name=i_file)
+            # Проверяем отсутствие файлов в локальной папке
+            delite_files: Set = cloud_files.keys() - local_files.keys()
+            # Удаляем все файлы, которых нет в локальной папке
+            for i_file in delite_files:
+                self.__cloud.delete(file_name=i_file)
