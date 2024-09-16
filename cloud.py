@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from imghdr import tests
 from time import strftime, gmtime, sleep
 from typing import Dict, List
 import os
@@ -25,7 +26,9 @@ class Cloud:
         Метод для получения словаря из имён файлов и времени(timestamp)
 
         :param files_list: Список словарей состоящий из имени и времени файла
-        :return:
+        :type files_list: List[Dict[str, str]]
+        :return: Словарь с файлами и временем
+        :rtype: Dict[str, float]
         """
 
         # Создаем словарь для файлов
@@ -76,12 +79,12 @@ class Cloud:
 
             except ConnectionError:
                 # Если отсутствует подключение к интернету, ждём 10 секунд
-                logger.error("Не удалось проверить токен - отсутствует подключение к интернету")
+                logger.error("Не удалось проверить токен. Ошибка соединения.")
                 sleep(10)
 
 
 
-    def get_info(self) -> Dict[str, float]:
+    def get_info(self) -> Dict[str, float] | None:
         """
         Метод класса для получения информации о файлах в папке на облаке
 
@@ -90,21 +93,27 @@ class Cloud:
         """
         # Новые параметры с учетом нужных полей
         params = self.__params.copy()
+        # добавляем параметры, для получения только нужных полей(имя файла и дата изменения)
         params["fields"]: str = "_embedded.items.name, _embedded.items.modified"
 
-        # Запрос на получение названия файлов и времени последнего обновления
-        request = requests.get(
-            url="https://cloud-api.yandex.net/v1/disk/resources",
-            headers=self.__headers,
-            params=params)
-        # Преобразуем в json
-        result: Dict = request.json()
-        # Получаем список файлов
-        files_list: List[Dict[str, str]] = result["_embedded"]["items"]
+        try:
+            # Запрос на получение названия файлов и времени последнего обновления
+            request = requests.get(
+                url="https://cloud-api.yandex.net/v1/disk/resources",
+                headers=self.__headers,
+                params=params)
+            # Преобразуем в json
+            result: Dict = request.json()
+            # Получаем список файлов
+            files_list: List[Dict[str, str]] = result["_embedded"]["items"]
+            # Преобразуем список файлов в нужный нам формат
+            files_dict: Dict[str, float] = self.__get_file_dict(files_list)
 
-        files_dict: Dict[str, float] = self.__get_file_dict(files_list)
-
-        return files_dict
+            return files_dict
+        # в случае отсутствия соединения
+        except ConnectionError:
+            logger.error("Не удалось синхронизировать файлы. Ошибка соединения")
+            return None
 
     def load(self, file_path: str) -> None:
         """
@@ -114,25 +123,32 @@ class Cloud:
         :type file_path: str
         """
         # Путь к локальному файлу
-        path = os.path.abspath(file_path)
+        path: str = os.path.abspath(file_path)
         # Имя файла
-        file_name = os.path.basename(file_path)
+        file_name: str = os.path.basename(file_path)
         # Путь к файлу в облаке
-        cloud_file_path = f"{self.__dir_name}/{file_name}"
+        cloud_file_path: str = f"{self.__dir_name}/{file_name}"
 
         # Считываем локальный файл
         with open(path, "rb") as f:
             file = f.read()
 
-        # Запрос на получение ссылки для загрузки файла в облако
-        request = requests.get(
-            url="https://cloud-api.yandex.net/v1/disk/resources/upload",
-            headers=self.__headers,
-            params={"path": cloud_file_path, "overwrite": "true"})
-        # Получаем url для загрузки файла
-        url = request.json()["href"]
-        # Загружаем файл в облако
-        request_put = requests.put(url=url, data=file)
+        try:
+            # Запрос на получение ссылки для загрузки файла в облако
+            request = requests.get(
+                url="https://cloud-api.yandex.net/v1/disk/resources/upload",
+                headers=self.__headers,
+                params={"path": cloud_file_path, "overwrite": "true"})
+
+            # Получаем url для загрузки файла
+            url: str = request.json()["href"]
+
+            # Загружаем файл в облако
+            requests.put(url=url, data=file)
+
+            logger.info(f"Файл {file_name} успешно записан.")
+        except ConnectionError:
+            logger.error(f"Файл {file_name} не записан. Ошибка соединения.")
 
     def reload(self, file_path: str) -> None:
         """Метод для обновления файлов"""
