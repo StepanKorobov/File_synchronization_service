@@ -19,6 +19,39 @@ class Cloud:
         self.__dir_name: str = dir_name
 
 
+    @classmethod
+    def __get_file_dict(cls, files_list: List[Dict[str, str]]) -> Dict[str, float]:
+        """
+        Метод для получения словаря из имён файлов и времени(timestamp)
+
+        :param files_list: Список словарей состоящий из имени и времени файла
+        :return:
+        """
+
+        # Создаем словарь для файлов
+        files_dict: Dict[str, float] = dict()
+        # Локальная временная зона (у яндекс диска +0), нужно для корректной синхронизации файлов
+        time_utc = strftime("%z", gmtime())
+        time_utc = int(time_utc[1:3])
+
+        # В цикле проходимся по всем файлам для добавления в словарь
+        for i_file in files_list:
+            # Получаем время обновления файла строкой
+            dt: str = i_file["modified"]
+            # Получаем время обновления файла в корректном формате
+            date_time: datetime = datetime(
+                year=int(dt[0:4]),
+                month=int(dt[5:7]),
+                day=int(dt[8:10]),
+                hour=int(dt[11:13]),
+                minute=int(dt[14:16]),
+                second=int(dt[17:19]), )
+            correct_dt = date_time + timedelta(hours=time_utc)
+            # Сохраняем в словарь
+            files_dict[i_file["name"]]: float = correct_dt.timestamp()
+
+        return files_dict
+
     def token_check(self) -> bool:
         """
         Метод для проверки токена
@@ -67,28 +100,9 @@ class Cloud:
         # Преобразуем в json
         result: Dict = request.json()
         # Получаем список файлов
-        files_list: List[Dict] = result["_embedded"]["items"]
-        # Создаем словарь для нфайлов
-        files_dict: Dict[str, float] = dict()
-        # Локальная временная зона (у яндекс диска +0), нужно для корректной синхронизации файлов
-        time_utc = strftime("%z", gmtime())
-        time_utc = int(time_utc[1:3])
+        files_list: List[Dict[str, str]] = result["_embedded"]["items"]
 
-        # В цикле проходимся по всем файлам для добавления в словарь
-        for i_file in files_list:
-            # Получаем время обновления файла строкой
-            dt: str = i_file["modified"]
-            # Получаем время обновления файла в корректном формате
-            date_time: datetime = datetime(
-                year=int(dt[0:4]),
-                month=int(dt[5:7]),
-                day=int(dt[8:10]),
-                hour=int(dt[11:13]),
-                minute=int(dt[14:16]),
-                second=int(dt[17:19]), )
-            correct_dt = date_time + timedelta(hours=time_utc)
-            # Сохраняем в словарь
-            files_dict[i_file["name"]]: float = correct_dt.timestamp()
+        files_dict: Dict[str, float] = self.__get_file_dict(files_list)
 
         return files_dict
 
