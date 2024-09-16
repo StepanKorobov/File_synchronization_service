@@ -50,13 +50,19 @@ class Main:
 
         # Создаём логгер
         cls.__logging_settings(path_log_file=path_log_file)
-        # Проверяем существование указанной локальной директории
-        if os.path.exists(path_sync_folder):
-            # Создаём экземпляр класса для работы с облаком
-            cloud: Cloud = Cloud(token=token, dir_name=path_cloud_folder)
-            # Создаём экземпляр класса для работы с синхронизацией
-            synchronization: Synchronization = Synchronization(dir_path=path_sync_folder, cloud=cloud)
+        # Создаём экземпляр класса для работы с облаком
+        cloud: Cloud = Cloud(token=token, dir_name=path_cloud_folder)
+        # Создаём экземпляр класса для работы с синхронизацией
+        synchronization: Synchronization = Synchronization(dir_path=path_sync_folder, cloud=cloud)
 
+        # Проверяем существование указанной локальной директории
+        if not os.path.exists(path_sync_folder):
+            logger.critical(f"Указанной директории не существует {path_sync_folder}. Программа прекращает свою работу")
+        # Проверяем исправность токена
+        if not cloud.token_check():
+            logger.critical(f"Указанный токен неисправен {token}. Программа прекращает свою работу")
+        # запускаем программу
+        else:
             # запускаем бесконечный цикл
             logger.info(f"Программа синхронизации файлов начинает работу с директорией {path_sync_folder}.")
             while True:
@@ -64,8 +70,6 @@ class Main:
                 synchronization.synchronize()
                 # Засыпаем на установленный период
                 time.sleep(sync_period)
-
-        logger.critical(f"Указанной директории не существует {path_sync_folder}. Программа прекращает свою работу")
 
 
 if __name__ == "__main__":

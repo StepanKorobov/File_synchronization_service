@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
-from time import strftime, gmtime
+from time import strftime, gmtime, sleep
 from typing import Dict, List
 import os
 
+from loguru import logger
+from requests.exceptions import ConnectionError
 import requests
 
 
@@ -15,6 +17,36 @@ class Cloud:
         self.__headers: Dict[str, str] = {"Authorization": f"OAuth {token}"}
         self.__params: Dict[str, str] = {"path": dir_name}
         self.__dir_name: str = dir_name
+
+
+    def token_check(self) -> bool:
+        """
+        Метод для проверки токена
+
+        :return: Возвращает True, если токен рабочий, иначе False
+        :rtype: bool
+        """
+
+        while True:
+            try:
+                # Делаем запрос на получение информации
+                request = requests.get(
+                    url="https://cloud-api.yandex.net/v1/disk/resources",
+                    headers=self.__headers,
+                    params=self.__params)
+
+                # Если статус 200, значит токен исправен
+                if request.status_code == 200:
+                    return True
+
+                return False
+
+            except ConnectionError:
+                # Если отсутствует подключение к интернету, ждём 10 секунд
+                logger.error("Не удалось проверить токен - отсутствует подключение к интернету")
+                sleep(10)
+
+
 
     def get_info(self) -> Dict[str, float]:
         """
