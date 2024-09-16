@@ -41,7 +41,7 @@ class Synchronization:
         # возвращаем словарь с файлами
         return files
 
-    def synchronize(self):
+    def synchronize(self) -> None:
         """Метод для синхронизации файлов"""
         # Получаем словарь локальных файлов
         local_files: Dict[str, float] = self.__get_all_files()

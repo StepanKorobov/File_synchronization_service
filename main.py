@@ -1,5 +1,3 @@
-import sys
-
 from dotenv import dotenv_values
 from typing import Dict
 import os
@@ -29,7 +27,7 @@ class Main:
                    level="INFO",
                    rotation="1 MB",
                    compression="zip",)
-        logger.add(sys.stdout, format="synchronizer {time:YYYY-MM-DD HH:mm:ss,SSS} {level} {message}")
+        # logger.add(sys.stdout, format="synchronizer {time:YYYY-MM-DD HH:mm:ss,SSS} {level} {message}")
 
     @classmethod
     def start(cls):
