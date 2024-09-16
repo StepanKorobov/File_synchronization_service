@@ -90,7 +90,7 @@ class Cloud:
 
     def reload(self, file_path: str) -> None:
         """Метод для обновления файлов"""
-        self.file_upload(file_path)
+        self.load(file_path)
 
     def delete(self, file_name: str) -> None:
         """
