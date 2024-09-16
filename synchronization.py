@@ -49,7 +49,7 @@ class Synchronization:
         cloud_files: Dict[str, float] | None= self.__cloud.get_info()
 
         # Если соединение спешно и список получен
-        if cloud_files:
+        if cloud_files is not None:
             # Проверяем наличие файлов в облаке и дату последнего изменения
             for i_file, i_date in local_files.items():
                 # Путь к локальному файлу
