@@ -19,6 +19,7 @@ class Main:
 
     @classmethod
     def __logging_settings(cls, path_log_file: str):
+        """Метод для создания логгера"""
         # Удаляем стандартный логгер
         logger.remove()
         # Добавляем свои
